@@ -1,0 +1,461 @@
+# Stage 06 robustness and attribution contract, predeclared 24 September 2026
+# before any Stage 06 case was run.  The Stage 02 physical contract, the
+# simple sharing rule, the Stage 04 settlement family and the Stage 05
+# information contract are frozen in their own files (hashes checked at run
+# time).  This file only adds perturbations, new capabilities and experiments.
+
+[stage06]
+frozen_physical_config = "config/base.toml" # Frozen Stage 02 contract; never edited.
+frozen_settlement_config = "config/stage04.toml" # Frozen Stage 04 settlement family.
+frozen_operation_config = "config/stage05.toml" # Frozen Stage 05 information contract.
+stage02_results = "results/stage02" # Preserved; read only.
+stage04_results = "results/stage04" # Preserved; read only.
+stage05_results = "results/stage05" # Preserved; read only.
+cache_dir = "tmp/stage06/cache" # Ignored solve cache; entries are untrusted until revalidated.
+hourly_dir = "tmp/stage06/hourly" # Ignored compact hourly flows for independent verification.
+game_workers = 8 # Host budget: 10 physical cores, 48 GB; small coalition LPs in parallel.
+heavy_workers = 4 # Full-year hourly oracles and rolling controllers (several GB each).
+game_reconciliation_tolerance_aud = 1.0e-3 # Same as Stage 04 oracle reconciliation allowance.
+money_tolerance_aud = 1.0e-6 # Export read-back and recomputation tolerance.
+coalition_tolerance_aud = 1.0e-5 # Same as Stage 04 coalition excess reporting tolerance.
+principal_need_mode = "inverse_income" # Stage 05 principal illustration (frozen).
+principal_need_lambda = 1.0 # Stage 05 principal illustration (frozen).
+
+[stage06.fees]
+community_connection_aud_per_day = 1.0 # New F2: workbook Q4 "1" read as one connection per coalition (single-gate reading).
+
+[stage06.capabilities]
+initial_soc_prefix_price_aud_per_kwh = 0.0 # Initial inventory is created in explicit uncharged prefix hours, reported as grid-origin.
+cyclic_max_iterations = 50 # Rule fixed-point iterations for the cyclic terminal rule.
+cyclic_tolerance_kwh = 1.0e-9 # Rule fixed-point convergence on every battery.
+
+[stage06.peak]
+community_import_caps_kw = [40.0, 35.0, 30.0, 27.385, 25.0, 22.5, 20.0, 17.5, 15.0] # Declared grid; 27.385 is sharing's Stage 02 peak.
+causal_cap_kw = 25.0 # Labelled causal experiment: a hard cap 2.4 kW below sharing's peak.
+min_cap_margin_kw = 0.01 # Added before any run: minimum-peak cap is solved 0.01 kW above the LP minimum for numerical robustness.
+connection_limit_kw = 5.0 # base.toml [sensitivities] capacity_model "5_kw_per_household".
+
+[stage06.forecast]
+noise_sigmas = [0.10, 0.25, 0.50, 1.00] # Multiplicative Gaussian error on revealed future demand and PV (offset >= 1 h).
+noise_seed = 20261001 # Fixed before running; one stream per decision hour.
+guarded_reruns = ["FC3", "G2"] # Added 24 Sep after FC3/G2 failed the frozen validator (one hour each of owner-to-owner battery transfer).
+
+[stage06.communication]
+# Coordination loss: listed hours run the household-local rule on actual SOC;
+# sharing resumes at the next hour.  Start indices count hours from row 3.
+outages = [
+    { id = "L0", start_index = 6000, duration_hours = 3, label = "Stage 05 event 2 hours on sharing" },
+    { id = "L1", start_index = 336, duration_hours = 24, label = "1 day from 15 Jan" },
+    { id = "L2", start_index = 4680, duration_hours = 24, label = "1 day from 15 Jul" },
+    { id = "L3", start_index = 264, duration_hours = 168, label = "7 days from 12 Jan" },
+    { id = "L4", start_index = 4632, duration_hours = 168, label = "7 days from 13 Jul" },
+    { id = "L5", start_index = 0, duration_hours = 744, label = "January" },
+    { id = "L6", start_index = 4344, duration_hours = 744, label = "July" },
+    { id = "L8", start_index = 0, duration_hours = 8760, label = "Whole year (control: must equal the independent rule)" },
+]
+random_day_fraction = 0.10 # L7: 36 whole days drawn without replacement.
+random_seed = 20261002 # Fixed before running.
+
+[stage06.ablation]
+anchors = ["strong", "rule"] # Stage 04 strong-anchored targets plus rule-anchored targets declared here.
+adverse_increase_cases = 2 # Rerun on the two cases that most increase sharing's strong funding shortfall.
+adverse_decrease_cases = 1 # and the one that most decreases it, if any case decreases it.
+
+# Predeclared experiment ledger.  plan_item keys: tariff_unit, fee, pv,
+# battery, forecast, exit, communication, peak, ablation, replication.
+# game: full (all 511 coalitions re-solved), arithmetic (exact transform of
+# the base primary costs), restricted (subset of the base game), unchanged
+# (outside options unaffected), none.
+[[ledger]]
+id = "R0"
+plan_item = "replication"
+question = "Does the Stage 06 path reproduce Stage 02 rules and all 511 Stage 04 coalition costs?"
+changes = "none"
+overturns = "Any Stage 06 number that silently drifts from the frozen Stage 02/04/05 results"
+scenarios = "independent rule, sharing rule, base game recomputed"
+game = "full"
+
+[[ledger]]
+id = "T1"
+plan_item = "tariff_unit"
+sensitivity_key = "tariff_to_aud"
+question = "If J/K are literally c/kWh, does sharing still beat independent operation and does the settlement picture hold?"
+changes = "billing.tariff_to_aud 1.0 -> 0.01 (peak-hour mask kept on raw 0.55)"
+overturns = "C1 sharing saves vs independent rule; C3 strong shortfall; C4 singleton feasibility; C5 Member 5 gains"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "T2"
+plan_item = "tariff_unit"
+combination = ["tariff_to_aud", "wear_aud_per_discharge_kwh"]
+question = "Labelled combination: does any T1 reversal come from the AUD wear rate rather than the unit itself?"
+changes = "tariff_to_aud 0.01 and wear 0.0"
+overturns = "Attribution of a T1 reversal to the tariff unit"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "F1"
+plan_item = "fee"
+sensitivity_key = "daily_connection_aud"
+question = "If the $1/day fee is for the whole community (split per household), do the conclusions change?"
+changes = "billing.daily_connection_aud 1.0 -> 1/9 per household"
+overturns = "C1, C3, C4, C5 and percentage savings"
+scenarios = "independent rule, sharing rule (fees are additive, dispatch unchanged)"
+game = "arithmetic"
+
+[[ledger]]
+id = "F2"
+plan_item = "fee"
+question = "If a coalition pays one connection regardless of size (single-gate reading), is strong subgroup protection fundable?"
+changes = "connection fee 365 AUD/year per coalition instead of per member (new; stage06.fees)"
+overturns = "C3 strong subgroup protection infeasible; size of sharing's advantage"
+scenarios = "independent rule, sharing rule, game from base primary costs"
+game = "arithmetic"
+
+[[ledger]]
+id = "F3"
+plan_item = "fee"
+sensitivity_key = "operating_aud_per_household_year"
+question = "Does a 20 AUD/household-year coordinator cost change sharing's advantage or singleton feasibility?"
+changes = "operating cost 0 -> 20 AUD per coordinated household-year (singletons pay none)"
+overturns = "C1 net of administration; C4; C5"
+scenarios = "sharing rule, game from base primary costs"
+game = "arithmetic"
+
+[[ledger]]
+id = "W1"
+plan_item = "battery"
+sensitivity_key = "wear_aud_per_discharge_kwh"
+question = "Does zero incremental wear change sharing's advantage, the oracle headroom or the shortfall?"
+changes = "billing.wear_aud_per_discharge_kwh 0.05 -> 0.0"
+overturns = "C1, C1b headroom, C3, C4"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P1"
+plan_item = "pv"
+sensitivity_key = "solar_midpoint_minutes"
+question = "Interval-start solar geometry"
+changes = "time.solar_midpoint_minutes 30 -> 0"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P2"
+plan_item = "pv"
+sensitivity_key = "tilt"
+question = "Flat roofs"
+changes = "pv.tilt 30 -> 0"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P3"
+plan_item = "pv"
+sensitivity_key = "azimuth"
+question = "East-facing roofs"
+changes = "pv.azimuth 0 -> 90"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P4"
+plan_item = "pv"
+sensitivity_key = "latitude"
+question = "Location uncertainty (latitude)"
+changes = "pv.latitude -33.8688 -> -33.9"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P5"
+plan_item = "pv"
+sensitivity_key = "longitude"
+question = "Location uncertainty (longitude)"
+changes = "pv.longitude 151.2093 -> 151.1"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P6"
+plan_item = "pv"
+sensitivity_key = "albedo"
+question = "Brighter surroundings"
+changes = "pv.albedo 0.2 -> 0.3"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P7"
+plan_item = "pv"
+sensitivity_key = "gamma_pdc"
+question = "Higher module temperature sensitivity"
+changes = "pv.gamma_pdc -0.0035 -> -0.004"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P8"
+plan_item = "pv"
+sensitivity_key = "wind_speed"
+question = "Higher cooling wind"
+changes = "pv.wind_speed 1 -> 2 m/s"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P9"
+plan_item = "pv"
+sensitivity_key = "dc_loss_fraction"
+question = "Higher PV system losses"
+changes = "pv.dc_loss_fraction 0.14 -> 0.20"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P10"
+plan_item = "pv"
+sensitivity_key = "inverter_efficiency"
+question = "Lower PV inverter efficiency"
+changes = "pv.inverter_efficiency 0.96 -> 0.94"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P11"
+plan_item = "pv"
+sensitivity_key = "dc_ac_ratio"
+question = "Smaller PV inverter (clipping)"
+changes = "pv.dc_ac_ratio 1.0 -> 1.2"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "P12"
+plan_item = "pv"
+sensitivity_key = "timezone"
+question = "If rows are Sydney civil clock hours (DST), does solar geometry change the conclusions?"
+changes = "solar geometry at Australia/Sydney civil instants; demand/tariff rows unchanged (new capability)"
+overturns = "C1, C3, C4, C5; the 202 night-GHI rows diagnostic"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "B1"
+plan_item = "battery"
+sensitivity_key = "usable_fraction"
+question = "90% depth of discharge (Fox global datasheet)"
+changes = "battery.usable_fraction 1.0 -> 0.9"
+overturns = "C1, C1b, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "B2"
+plan_item = "battery"
+sensitivity_key = "power_kw_per_module"
+question = "Lower battery power (recommended current)"
+changes = "battery.power_kw_per_module 2.24 -> 1.344"
+overturns = "C1, C1b, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "B3"
+plan_item = "battery"
+sensitivity_key = "pack_roundtrip_efficiency"
+question = "Lower pack efficiency"
+changes = "battery.pack_roundtrip_efficiency 0.95 -> 0.90"
+overturns = "C1, C1b, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "B4"
+plan_item = "battery"
+sensitivity_key = "converter_efficiency"
+question = "Lower battery converter efficiency"
+changes = "battery.converter_efficiency 0.96 -> 0.94"
+overturns = "C1, C1b, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game"
+game = "full"
+
+[[ledger]]
+id = "B5"
+plan_item = "battery"
+sensitivity_key = "initial_usable_soc_fraction"
+question = "Batteries start half full (explicit free starting inventory)"
+changes = "initial usable SOC 0 -> 50% in every case and coalition (new capability)"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game (extended LP)"
+game = "full"
+
+[[ledger]]
+id = "B6"
+plan_item = "battery"
+sensitivity_key = "terminal_rule"
+question = "Cyclic year: ending SOC must equal starting SOC"
+changes = "terminal rule free_no_credit -> cyclic (rules by fixed point; LPs by constraint) (new capability)"
+overturns = "C1, C3, C4, C5"
+scenarios = "independent rule, sharing rule, full game (extended LP)"
+game = "full"
+
+[[ledger]]
+id = "B7"
+plan_item = "battery"
+sensitivity_key = "thermal_model"
+question = "Ambient temperature derating of batteries"
+changes = "thermal_model conditioned -> ambient_derated"
+overturns = "C1, C3"
+scenarios = "none"
+game = "none"
+predeclared_status = "unrun"
+reason = "No sourced derating curve is configured; only 2 hours are below 0 C and both have zero PV, so no charge-temperature limit could alter a PV-only rule."
+
+[[ledger]]
+id = "G1"
+plan_item = "peak"
+question = "What does a community import cap cost an optimal (oracle) scheduler, per kW removed?"
+changes = "sum of household grid imports <= cap for each declared cap"
+overturns = "C7 cost optimisation is not grid-friendly; the claim that peak protection has a price"
+scenarios = "cooperative oracle with cap (full hourly LP), sharing exceedance at the same caps"
+game = "unchanged"
+
+[[ledger]]
+id = "G2"
+plan_item = "peak"
+question = "Labelled experiment: can the causal rolling LP enforce a 25 kW cap, and at what cost?"
+changes = "Stage 05 cooperative causal LP plus hard community import cap; sharing rule on infeasible hours"
+overturns = "Whether a causal peak limit is operable with the declared forecasts"
+scenarios = "cooperative causal LP with cap"
+game = "unchanged"
+
+[[ledger]]
+id = "G3"
+plan_item = "peak"
+sensitivity_key = "capacity_model"
+question = "5 kW per-household connection limit"
+changes = "|household connection flow| <= 5 kW"
+overturns = "Feasibility of the benchmark demand under connection limits"
+scenarios = "exceedance diagnostic on independent and sharing rules only"
+game = "none"
+predeclared_status = "unrun"
+reason = "Infeasible by data without load shedding or curtailment (Members 4 and 9 have no battery and demand above 5 kW; PV exports exceed 5 kW); neither is in the physical contract. Exceedance statistics are reported."
+
+[[ledger]]
+id = "G4"
+plan_item = "peak"
+sensitivity_key = "loss_fraction"
+question = "2% network loss on local exchange"
+changes = "grid.loss_fraction 0 -> 0.02"
+overturns = "Size of local-exchange value"
+scenarios = "none"
+game = "none"
+predeclared_status = "unrun"
+reason = "Labelled extension-only in base.toml; no sourced loss factor and no loss model on local flows."
+
+[[ledger]]
+id = "FC1"
+plan_item = "forecast"
+question = "With unbiased forecast error of sigma 0.10, does the cooperative rolling LP beat sharing?"
+changes = "Stage 05 LP with revealed future demand/PV times (1 + 0.10 eps), eps ~ N(0,1), current hour exact"
+overturns = "C2 sharing is the right operating policy (break-even forecast error)"
+scenarios = "cooperative rolling LP"
+game = "unchanged"
+
+[[ledger]]
+id = "FC2"
+plan_item = "forecast"
+question = "Same with sigma 0.25"
+changes = "noise sigma 0.25"
+overturns = "C2"
+scenarios = "cooperative rolling LP"
+game = "unchanged"
+
+[[ledger]]
+id = "FC3"
+plan_item = "forecast"
+question = "Same with sigma 0.50"
+changes = "noise sigma 0.50"
+overturns = "C2"
+scenarios = "cooperative rolling LP"
+game = "unchanged"
+
+[[ledger]]
+id = "FC4"
+plan_item = "forecast"
+question = "Same with sigma 1.00"
+changes = "noise sigma 1.00"
+overturns = "C2"
+scenarios = "cooperative rolling LP"
+game = "unchanged"
+
+[[ledger]]
+id = "FC5"
+plan_item = "forecast"
+question = "Labelled experiment: does forbidding grid charging (PV-surplus-bounded charging) remove the causal LP's loss?"
+changes = "Stage 05 trailing-mean forecasts; community charge <= forecast community PV surplus"
+overturns = "Stage 05 interpretation that forecast-driven grid charging causes the loss"
+scenarios = "cooperative rolling LP, PV-first"
+game = "unchanged"
+
+[[ledger]]
+id = "X1-X9"
+plan_item = "exit"
+question = "If one member leaves, does the remaining eight-member community still gain, and can it be settled?"
+changes = "remove member k (k = 1..9); sharing rule rerun on eight members in the same order"
+overturns = "C1 for the remaining community; C3/C4 on the restricted game; no remaining member made worse off"
+scenarios = "sharing rule (8 members) for each departure; leaver at independent rule and strong outside option"
+game = "restricted"
+
+[[ledger]]
+id = "L0-L8"
+plan_item = "communication"
+question = "What does loss of coordination cost when sharing falls back to household-local operation?"
+changes = "declared outage windows (stage06.communication) on the sharing rule"
+overturns = "C9 fallback is cheap and safe; C1 under prolonged outage"
+scenarios = "sharing rule with local fallback per window; L8 must equal the independent rule"
+game = "unchanged"
+
+[[ledger]]
+id = "AB"
+plan_item = "ablation"
+question = "What is the measured effect of removing the claimed contribution (strong outside options and coalition testing)?"
+changes = "fixed sharing dispatch, fixed dollar targets and budget; protection A (rule singletons), B (strong singletons), C (all strong proper coalitions); anchors strong and rule; 3 proxies x 5 dial values"
+overturns = "Thesis: weak participation checks overstate room for redistribution"
+scenarios = "base; adverse cases selected by stage06.ablation"
+game = "full"
+
+# Rows below were added on 24 September 2026 after FC3 and G2 failed the
+# frozen Stage 02 validator.  The failed originals stay in the ledger.
+[[ledger]]
+id = "FC3r"
+plan_item = "forecast"
+question = "FC3 rerun with a validator guard: does sigma 0.50 still leave sharing ahead?"
+changes = "as FC3; an hour whose LP action routes battery output into another owner's battery runs the sharing rule (recorded correction)"
+overturns = "C2"
+scenarios = "cooperative rolling LP"
+game = "unchanged"
+
+[[ledger]]
+id = "G2r"
+plan_item = "peak"
+question = "G2 rerun with the same validator guard: can the causal LP enforce 25 kW, and at what cost?"
+changes = "as G2; owner-to-owner battery transfer hours run the sharing rule (recorded correction)"
+overturns = "Whether a causal peak limit is operable with the declared forecasts"
+scenarios = "cooperative causal LP with cap"
+game = "unchanged"

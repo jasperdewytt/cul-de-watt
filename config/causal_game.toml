@@ -1,0 +1,15 @@
+# Matched causal coalition game, added 16 October 2026 after the pre-submission review
+# (review/2026-10-14/00-summary.md, decision D2). Labelled experiment: it reads the frozen
+# Stage 02-06 and sharing-plus exports and never revises them. Physics, tariffs, fees and
+# wear are config/base.toml; the rule menu is config/sharing_plus.toml.
+
+[causal_game]
+stage06_results = "results/stage06" # Strong (oracle) game R0 and principal allocations; read only.
+sharing_plus_results = "results/sharing_plus" # Grand-coalition variant costs used as a reconciliation check.
+sharing_plus_config = "config/sharing_plus.toml" # Forecast-free rule menu SP0-SP4 and published-tariff schedule.
+primary_game = "sharing" # Game D: every coalition runs the frozen simple sharing rule (the rule the community adopts).
+menu_game = "best_causal_rule" # Game E: every coalition picks its cheapest rule from SP0-SP4 in hindsight of its own annual cost.
+budget = "sharing_realised_cost" # Settlement budget: the adopted community's realised annual cost (Stage 02 sharing).
+workers = 8 # Parallel rule simulations; matches config/stage06.toml game_workers on the reference host.
+reconciliation_tolerance_aud = 1.0e-6 # Grand and singleton rule costs must reproduce Stage 02 and sharing-plus exports.
+coalition_tolerance_aud = 1.0e-5 # Excess above this counts as a coalition violation; same as config/stage06.toml.

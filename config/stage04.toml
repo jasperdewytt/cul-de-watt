@@ -1,0 +1,45 @@
+# Stage 04 settlement/reporting assumptions. This file is separate from the
+# Stage 02 physical configuration and is never used to rerun dispatch.
+[stage04]
+oracle_reconciliation_tolerance_aud = 0.001 # Primary-vs-Stage02 secondary oracle allowance, AUD.
+members = [1, 2, 3, 4, 5, 6, 7, 8, 9] # Benchmark: nine fixed households.
+fee_scenarios_aud_per_member_year = [0.0, 20.0, 60.0] # Illustrative fee range: zero, base.toml $20, and a $60 stress case.
+need_lambdas = [0.0, 0.25, 0.5, 0.75, 1.0] # Equal-to-need target dial.
+need_weight_modes = ["equal", "inverse_income", "occupants_income"] # Governance proxies, not vulnerability diagnoses.
+projection_tolerance_aud = 1.0e-7 # Assumption: fixed-target projection feasibility tolerance.
+coalition_tolerance_aud = 1.0e-5 # Assumption: coalition excess and budget reporting tolerance.
+provenance_required = true # Reject stale Stage 02 physical/configuration inputs.
+write_figures = true # Compact diagnostic PNGs are reproducible report inputs.
+target_objective = "L1_then_member_order_lexicographic" # Fixed dollar targets; preserve the optimal L1 face.
+inverse_income_formula = "(1 / annual_income) normalised over members" # Governance proxy, not a vulnerability claim.
+occupants_income_formula = "(occupants / annual_income) normalised over members" # Governance proxy, not a vulnerability claim.
+
+[stage04.coordinator_fee]
+singleton_extra_aud = 0.0 # Singleton deviations retain their independent Stage 02 fee.
+proper_coalition_aud_per_member_year = "fee_scenarios_aud_per_member_year" # Fee applies to coordinated coalitions.
+grand_actual_budget = "base_sharing_cost_plus_member_fee" # No subsidy and no exit penalty.
+
+[stage04.coalition]
+primal_feasibility_tolerance = 1.0e-9 # HiGHS/CVXPY primary LP feasibility tolerance.
+dual_feasibility_tolerance = 1.0e-9 # HiGHS/CVXPY dual feasibility tolerance.
+
+[allocation]
+feasibility_tolerance = 1.0e-7 # Allocation/core inequality tolerance in AUD.
+objective_tolerance = 1.0e-8 # Primary L1 projection objective tolerance in AUD.
+face_tolerance = 1.0e-7 # Optimal-face preservation tolerance in AUD.
+rank_tolerance = 1.0e-9 # Lexicographic nucleolus rank tolerance.
+primal_feasibility_tolerance = 1.0e-7 # Allocation LP primal feasibility tolerance.
+dual_feasibility_tolerance = 1.0e-7 # Allocation LP dual feasibility tolerance.
+max_nucleolus_stages = 0 # Zero means continue until the imputation face is fully fixed.
+
+[stage04.reporting]
+monthly_settlement_timing = "annual_trueup" # Midpoint interim cash; one final annual adjustment.
+monthly_soc_policy = "stage02_exported_accounts" # Do not rerun or reset SOC by month.
+physical_dispatch_policy = "fixed_stage02_sharing_rule" # Settlement changes money only.
+negative_monthly_gain_metric = "show_and_finance_cumulative_shortfall" # No monthly guarantee claim.
+
+[stage04.provenance]
+source_manifest = "results/stage02/run_manifest.json" # Stage 02 input manifest to validate.
+source_scenario = "sharing_rule" # Fixed physical account used for settlement reporting.
+reference_scenario = "independent_oracle" # Strong outside-option vector r.
+rule_reference_scenario = "independent_rule" # Rule no-loss ablation A and gains.

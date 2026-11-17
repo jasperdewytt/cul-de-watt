@@ -1,0 +1,32 @@
+[project]
+name = "comergy"
+version = "0.1.0"
+description = "ComErgy 2026 reproducible community energy benchmark"
+readme = "README.md"
+authors = [
+    { name = "Jasper de Wolfe de Wytt" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "cvxpy>=1.9.2",
+    "highspy>=1.15.1",
+    "matplotlib>=3.11.2",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.6",
+    "pvlib>=0.15.2",
+]
+
+[project.scripts]
+comergy = "comergy.run:main"
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

@@ -1,0 +1,10 @@
+# Submission identity (added 17 October 2026). Read by the report macros, the site and the
+# package builder. Change team_name here and rebuild; nothing else names the team.
+
+[submission]
+team_name = "Cul-de-Watt" # Chosen by the user on 17 Oct 2026; it also sets the ZIP name.
+title = "Watt's Mine Is Yours" # Report, supplement and site title, chosen by the user on 17 Oct 2026.
+subtitle = "A community energy proposal by Team Cul-de-Watt" # Subtitle under the title.
+authors = "Jasper de Wolfe de Wytt" # Author list as given by the user.
+report_date = "17 October 2026" # Fixed date on both PDFs and the site, so rebuilds are byte-stable.
+zip_suffix = "_ComErgy2026.zip" # Package name is team_name + zip_suffix (competition naming convention).

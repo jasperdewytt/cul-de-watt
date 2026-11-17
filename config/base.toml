@@ -1,0 +1,108 @@
+# Central Stage 01 assumptions. Alternatives below are NOT automatically run.
+[source]
+workbook = "ComErgy Benchmark Dataset 2026.xlsx" # Supplied original; read only.
+sheet = "ComErgy Benchmark Dataset 2026" # Workbook tab name.
+first_row = 3 # Dataset audit: first hourly record.
+hours = 8760 # Workbook A3:M8762; non-leap year.
+
+[time]
+start = "2026-01-01" # Assumption: weekday pattern matches 2026.
+timezone = "Etc/GMT-10" # Assumption: fixed Sydney standard time UTC+10, no DST shifts.
+interval_hours = 1.0 # Assumption: demand is hourly interval kWh.
+solar_midpoint_minutes = 30 # Assumption: GHI is interval average, geometry at midpoint.
+
+[billing]
+tariff_to_aud = 1.0 # Assumption: AUD/kWh despite c/kWh labels; Q3 says AUD.
+daily_connection_aud = 1.0 # Q4=1; assume AUD per household per day.
+wear_aud_per_discharge_kwh = 0.05 # Assumption: linear wear on AC discharge; not a cash bill.
+operating_aud_per_household_year = 0.0 # Assumption: no coordinator in independent case.
+peak_tariff_raw = 0.55 # Source J: keep this raw-price mask under unit sensitivities.
+
+[pv]
+module_kw = 0.440 # P20: LG NeON 440 W; interpreted as DC STC.
+latitude = -33.8688 # Assumption: Sydney city centre, no roof coordinates supplied.
+longitude = 151.2093 # Assumption: Sydney city centre.
+tilt = 30.0 # Assumption: common roof tilt in degrees.
+azimuth = 0.0 # Assumption: all roofs face north, pvlib degrees east of north.
+albedo = 0.2 # Assumption: ordinary ground reflectance.
+gamma_pdc = -0.0035 # Assumption: representative module power coefficient / deg C.
+wind_speed = 1.0 # Assumption: m/s; benchmark supplies none.
+faiman_u0 = 25.0 # pvlib Faiman default heat loss coefficient W/m2/K.
+faiman_u1 = 6.84 # pvlib Faiman default wind coefficient W/m2/K/(m/s).
+dc_loss_fraction = 0.14 # Assumption: aggregate wiring, shading, soiling etc.
+inverter_efficiency = 0.96 # Assumption: constant AC conversion efficiency.
+dc_ac_ratio = 1.0 # Assumption: AC inverter nameplate = DC array nameplate.
+night_ghi = "zero" # Assumption: discard positive GHI when solar zenith >=90; report amount.
+
+[battery]
+module_kwh = 4.66 # P19 benchmark nominal energy; Fox ESS EQ4800.
+usable_fraction = 1.0 # Fox AU V1.3 2025/09/15: 100% DoD; alternate regional spec differs.
+power_kw_per_module = 2.24 # Fox AU: L2=4.48kW at 89.6V*50A; assume constant AC port cap.
+pack_roundtrip_efficiency = 0.95 # Conservative approximation to Fox AU >95% pack RTE.
+converter_efficiency = 0.96 # Assumption: each-way inverter efficiency, additional to pack.
+initial_usable_soc_fraction = 0.0 # Assumption: empty usable storage, no free starting energy.
+terminal_rule = "free_no_credit" # Assumption: carried energy reported, no terminal cash credit.
+thermal_model = "conditioned" # Assumption: batteries inside operating range; no ambient derating.
+policy = "own_pv_only" # Assumption: own PV surplus charging, own load discharge, no arbitrage.
+
+[grid]
+capacity_model = "unlimited" # Assumption: no import/export connection limits supplied.
+loss_fraction = 0.0 # Assumption: household meter accounting; no external network losses modelled.
+
+[environment]
+emissions_factor_status = "unavailable" # No suitable sourced NSW factor selected in Stage 01.
+
+[stage02]
+# Stage 02 comparison assumptions. The final settlement mechanism is Stage 04.
+local_price_method = "midpoint" # Provisional accounting: (import tariff + feed-in tariff) / 2.
+allow_grid_charging = true # Matched dispatch permission: oracle cases may charge batteries from the grid.
+allow_stored_exports = true # Matched dispatch permission: PV- or grid-origin stored energy may be exported.
+origin_mix_rule = "perfectly_mixed_storage_pv_first_paths" # Assumption: oracle storage provenance is mixed by start SOC; source paths are PV-first.
+tie_break_rule = "lexicographic" # Assumption: deterministic solver tie-break after the primary cost objective.
+sharing_allocation_rule = "ascending_member_index_own_battery_first" # Assumption: causal sharing clears loads, then own batteries, then remaining batteries in member order.
+initial_soc_rule = "zero_usable" # Matched boundary: every case starts with zero usable SOC.
+terminal_rule = "free_no_credit" # Matched boundary: ending inventory is reported without terminal cash credit.
+origin_tolerance_kwh = 1.0e-7 # Assumption: hourly physical and origin reconciliation tolerance.
+money_tolerance_aud = 1.0e-7 # Assumption: community internal-payment and bill reconciliation tolerance.
+ordering_tolerance_aud = 1.0e-5 # Assumption: comparison ordering tolerance for LP numerical noise.
+objective_tolerance_aud = 1.0e-5 # Assumption: recomputed-versus-reported LP objective tolerance.
+tie_break_tolerance = 1.0e-9 # Assumption: relative primary-objective allowance for the lexicographic tie-break.
+
+[stage02.oracle_options]
+solver = "HIGHS" # HiGHS LP solver selected by the locked environment.
+tie_break = true # Deterministic secondary minimisation is part of the oracle contract.
+primary_tolerance = 1.0e-9 # Relative primary-objective allowance passed to dispatch.py.
+
+[sensitivities]
+# Alternatives for later one-at-a-time experiments; not measured scenarios.
+tariff_to_aud = 0.01 # Literal c/kWh interpretation.
+daily_connection_aud = 0.111111111111 # One dollar/day for the nine-household community.
+wear_aud_per_discharge_kwh = 0.0 # Zero incremental wear lower bound.
+operating_aud_per_household_year = 20.0 # Illustrative administration cost.
+timezone = "Australia/Sydney" # Civil DST calendar; would require explicit source-row interpretation.
+solar_midpoint_minutes = 0 # Source values aligned to interval start.
+tilt = 0.0 # Flat roof alternative.
+azimuth = 90.0 # East-facing roof alternative.
+latitude = -33.9 # Location uncertainty within Sydney.
+longitude = 151.1 # Location uncertainty within Sydney.
+albedo = 0.3 # Brighter surroundings.
+gamma_pdc = -0.004 # Higher temperature sensitivity.
+wind_speed = 2.0 # Higher cooling wind.
+dc_loss_fraction = 0.20 # Higher system losses.
+inverter_efficiency = 0.94 # Lower PV inverter efficiency.
+dc_ac_ratio = 1.2 # Smaller inverter.
+usable_fraction = 0.90 # Fox global V1.3 (2026/05/26) lists 90% DoD.
+power_kw_per_module = 1.344 # Nominal voltage 44.8V * recommended current 30A.
+pack_roundtrip_efficiency = 0.90 # Lower effective battery efficiency.
+converter_efficiency = 0.94 # Lower battery converter efficiency.
+initial_usable_soc_fraction = 0.5 # Requires explicit initial-energy provenance accounting.
+terminal_rule = "cyclic" # Later optimisation must enforce matched terminal state.
+thermal_model = "ambient_derated" # Later sensitivity using operating-temperature restrictions.
+capacity_model = "5_kw_per_household" # Illustrative grid connection constraint.
+loss_fraction = 0.02 # Illustrative additional network loss, extension only.
+
+[provenance]
+fox_au = "https://au.fox-ess.com/wp-content/uploads/2025/08/EN-EQ4800-DatasheetAU-V1.3-20251021.pdf"
+fox_global = "https://www.fox-ess.com/Public/Uploads/uploadfile/files/20260605/ENEQ4800DatasheetV1.320260526.pdf"
+pvlib = "https://pvlib-python.readthedocs.io/en/stable/"
+equipment_checked = "2026-09-18" # Manufacturer source retrieval date.

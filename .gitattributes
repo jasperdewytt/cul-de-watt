@@ -1,0 +1,10 @@
+# Byte-exact checkouts for provenance.
+#
+# Stage manifests (results/*/run_manifest.json, the Stage 04 coalition cache,
+# results/stage07/verification.json and others) record SHA-256 hashes of the exact
+# bytes of source, configuration, lock and result files as they were on disk when
+# each stage ran. Those bytes mix LF and CRLF line endings, so any end-of-line
+# conversion on checkout (core.autocrlf, eol) breaks the frozen provenance checks.
+# Disabling the text attribute stores and restores every file byte for byte on
+# any operating system and with any core.autocrlf setting. Diffs still work.
+* -text

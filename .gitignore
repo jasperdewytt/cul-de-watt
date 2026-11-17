@@ -1,0 +1,56 @@
+# Local credentials and machine-specific settings
+.env
+.env.*
+!.env.example
+.codex/
+.agents/
+
+# Python environments and disposable caches
+.venv/
+.uv-cache/
+.mpl-cache/
+results/independent/hourly.csv
+results/independent/community_hourly.csv
+results/stage02/*/hourly.csv
+results/stage02/*/community_hourly.csv
+pytest-cache-files-*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-work/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# Website dependencies and generated builds
+node_modules/
+dist/
+.next/
+
+# Disposable working files; keep selected research evidence versioned
+tmp/
+.DS_Store
+Thumbs.db
+~$*
+
+# Stage 04 disposable execution logs/checkpoints; compact completed exports remain versioned.
+work/stage04/
+.pytest-work-stage04*/
+results/stage04/*.partial.csv
+results/stage04/*.partial.json
+results/stage04/*.tmp
+
+# Stage 08 LaTeX build directory (the PDF and generated/ are versioned)
+report/build/
+
+# Local benchmark input and assistant settings
+*.xlsx
+.claude/
+
+# Generated analysis and publication assets
+results/
+site/
+report/generated/

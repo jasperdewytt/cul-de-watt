@@ -1,0 +1,11 @@
+# Grid emissions factor for the report and site (added 17 October 2026). Read only by
+# src/comergy/story.py; no model stage uses it, so every frozen result is unchanged.
+# Method: location-based scope 2, emissions = gross grid import kWh x factor. No credit is
+# taken for exports, and no claim of system-wide abatement is made.
+
+[emissions]
+nsw_scope2_kg_per_kwh = 0.64 # DCCEEW, Australian National Greenhouse Accounts Factors 2025, Table 1, "New South Wales and Australian Capital Territory", scope 2 (kg CO2-e/kWh); read from the official workbook on 17 Oct 2026.
+nsw_scope3_kg_per_kwh = 0.03 # Same table, scope 3 (transmission and distribution losses); reported in the supplement only, not added to the headline.
+source_title = "Australian National Greenhouse Accounts Factors 2025" # Publisher: Department of Climate Change, Energy, the Environment and Water.
+source_url = "https://www.dcceew.gov.au/climate-change/publications/national-greenhouse-accounts-factors-2025" # Landing page; workbook at /sites/default/files/documents/national-greenhouse-account-factors-2025.xlsx.
+source_workbook_sha256 = "8dd0386a1a5a275d0f8c19e1de9e6d788d2ca3edcdb2108b24644ffafb1f6914" # SHA-256 of the workbook as downloaded on 17 Oct 2026 (95,440 bytes).

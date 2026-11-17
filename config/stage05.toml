@@ -1,0 +1,70 @@
+# Stage 05 causal operation contract.  The benchmark's physical, tariff and
+# battery assumptions remain in config/base.toml; this file only adds causal
+# information, controller and failure-demonstration settings.
+
+[stage05]
+development_start = "2026-01-01T00:00:00+10:00" # Predeclared chronological development boundary.
+development_end = "2026-06-30T23:00:00+10:00" # Jan-Jun observations are development only.
+evaluation_start = "2026-07-01T00:00:00+10:00" # Jul-Dec is untouched held-out evaluation.
+horizon_hours = 24 # Assumption: hourly receding-horizon LP window.
+update_frequency_hours = 1 # Assumption: execute one interval and re-optimise hourly.
+history_days = 7 # Assumption: trailing same-hour profile uses the previous seven days.
+current_interval_observable = true # Idealised hourly meter/PV observation before dispatch.
+future_tariff_schedule_published = true # Operational assumption: tariff schedule is known.
+future_realised_demand_available = false # Causal contract: no future demand leakage.
+future_realised_pv_available = false # Causal contract: no future PV leakage.
+future_weather_available = false # Causal contract: no future weather leakage.
+terminal_value_aud_per_kwh = 0.15 # Explicit continuation preference; no cash credit.
+demand_forecast_multiplier = 1.0 # Conservative bound uses observed demand maximum.
+night_start_hour = 20 # Fallback deterministic solar-geometry mask when none is supplied.
+night_end_hour = 6 # Hours before this are treated as geometric night.
+execution_tolerance_kwh = 1.0e-7 # Physical action reconciliation tolerance.
+origin_tolerance_kwh = 1.0e-7 # Origin ledger tolerance passed to verification.
+
+[stage05.forecast]
+family = "trailing_same_hour_mean" # Bounded declared forecast family; no model search.
+missing_demand = "current_persistence" # Cold start when no same-hour history exists.
+missing_pv = "zero" # Cold start and night PV forecast behaviour.
+nonnegative = true # Forecast outputs are clipped at zero.
+pv_bound = "runner_supplied_ac_equipment_limit" # Do not infer future capacity from held-out data.
+
+[stage05.controller]
+grid_charging_allowed = true # Matches Stage 02 oracle physical permissions.
+stored_energy_exports_allowed = true # Matches Stage 02 oracle physical permissions.
+terminal_rule = "continuation_value_until_year_end_then_free_no_credit" # Explicit horizon treatment.
+tie_break = true # Secondary minimum-throughput solve gives deterministic actions.
+tie_break_tolerance = 1.0e-9 # Relative primary-objective allowance.
+secondary_constraint_tolerance_aud = 1.0e-7 # Reject a tie-break point beyond the primary face by more than this amount.
+secondary_retry_count = 1 # One fresh canonical solve after a rejected secondary point.
+objective_reconciliation_tolerance_aud = 1.0e-7 # Recomputed LP objective versus solver objective.
+solver = "HIGHS" # Locked LP solver.
+
+[stage05.controller.solver_options]
+primal_feasibility_tolerance = 1.0e-9 # Tight source/SOC reconciliation tolerance.
+dual_feasibility_tolerance = 1.0e-9 # Tight dual tolerance for reproducible LPs.
+
+[stage05.fallback]
+enabled = false # Runner passes fallback=true only for the bounded demonstration scenario.
+optimizer_failure_mode = "community_sharing" # Measurements and coordination remain available.
+coordination_failure_mode = "household_local" # No community information during outage.
+recovery = "next_hour_with_actual_soc_and_origin" # Resume LP after fixed event window.
+
+[[stage05.fallback.events]]
+start_index = 4800 # Fixed before inspecting outcomes.
+duration_hours = 3 # Hours 4800-4802 inclusive.
+reason = "optimizer_failure" # Community sharing remains available.
+
+[[stage05.fallback.events]]
+start_index = 6000 # Fixed before inspecting outcomes.
+duration_hours = 3 # Hours 6000-6002 inclusive.
+reason = "coordination_failure" # Household-local operation only.
+
+[stage05.runtime]
+time_representative_solve = true # Record first representative parameterised solve.
+checkpoint_hourly_diagnostics = false # Avoid committing large regenerated hourly files.
+write_figures = true # Export compact reproducible cost, peak and forecast figures.
+
+[stage05.provenance]
+information_contract = "notes/stage05-operation.md" # Predeclared information and evaluation contract.
+physical_contract = "notes/stage02-model.md" # Matched battery, tariff and origin rules.
+fallback_contract = "notes/stage05-operation.md" # Fixed events and recovery behaviour.

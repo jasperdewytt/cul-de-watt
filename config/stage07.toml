@@ -1,0 +1,104 @@
+# Stage 07 adds evidence checking only; no financial or dispatch assumptions change.
+# Provenance: stricter than the Stage 04 account tolerance; CSVs retain ten decimals.
+citation_tolerance_aud = 0.000000001
+
+# References below are orchestrator-reviewed mappings; not live service guarantees.
+[[clauses]]
+id = 'G01'
+status = 'not_made'
+evidence_ref = ['notes/stage07-governance.md']
+limitation = 'Consent, appointment and live entry are proposed prerequisites, not implemented or promised.'
+
+[[clauses]]
+id = 'G02'
+status = 'implemented'
+implementation_ref = ['src/comergy/dispatch.py::simulate_sharing', 'src/comergy/stage02.py::account_frames']
+test_ref = ['tests/test_dispatch.py::test_sharing_prioritises_local_load_then_battery_and_reconciles_origins', 'tests/test_stage02.py::test_account_frames_midpoint_payment_and_owner_wear_once']
+evidence_ref = ['results/stage02/sharing_rule/household_results.csv']
+limitation = 'Hourly simulation only; no device control or legal asset custody.'
+
+[[clauses]]
+id = 'G03'
+status = 'not_made'
+evidence_ref = ['notes/stage07-governance.md', 'config/base.toml']
+limitation = 'Live consent, override, safety and physical grid/environment guarantees are not made; demand is exogenous.'
+
+[[clauses]]
+id = 'G04'
+status = 'implemented'
+implementation_ref = ['src/comergy/stage04.py::_household_accounts', 'src/comergy/stage04.py::need_weights']
+test_ref = ['tests/test_stage07.py::test_household_table_matches_selected_sharing_accounts', 'tests/test_stage04_exports.py::test_full_year_game_and_every_exported_allocation']
+evidence_ref = ['results/stage04/household_accounts.csv', 'results/stage06/exit_summary.csv', 'results/stage07/cited_numbers.csv']
+limitation = 'Illustrated simulation allocation only; the table does not promise live bills, collections or consent.'
+
+[[clauses]]
+id = 'G05'
+status = 'implemented'
+implementation_ref = ['src/comergy/stage05_settlement.py::settle_actual_budget', 'src/comergy/settlement.py::project_target']
+test_ref = ['tests/test_stage05_settlement.py::test_settlement_targets_use_strong_reference_and_failed_domain_has_no_bills', 'tests/test_stage04_exports.py::test_monthly_trueups_and_fixed_targets']
+evidence_ref = ['results/stage04/household_accounts.csv', 'config/stage04.toml']
+limitation = 'Frozen alternative illustrations, not live election or extra community income.'
+
+[[clauses]]
+id = 'G06'
+status = 'implemented'
+implementation_ref = ['src/comergy/stage04.py::monthly_trueup']
+test_ref = ['tests/test_stage04_exports.py::test_monthly_trueups_and_fixed_targets', 'tests/test_stage07.py::test_interim_liquidity_is_cash_before_trueup']
+evidence_ref = ['results/stage04/monthly_accounts.csv']
+limitation = 'Annual accounting only; monthly guarantee, reserve, debt and collection protection explicitly not made.'
+
+[[clauses]]
+id = 'G07'
+status = 'implemented'
+implementation_ref = ['src/comergy/settlement.py::max_fundable_budget', 'src/comergy/stage05_settlement.py::settle_actual_budget']
+test_ref = ['tests/test_stage04_exports.py::test_funding_ceiling_has_balanced_dual_certificate', 'tests/test_stage05_settlement.py::test_settlement_targets_use_strong_reference_and_failed_domain_has_no_bills']
+evidence_ref = ['results/stage06/sensitivity_summary.csv']
+limitation = 'Diagnostics of unfundable protection; no subsidy or additional invoice, conditional individual protection only.'
+
+[[clauses]]
+id = 'G08'
+status = 'not_made'
+implementation_ref = ['src/comergy/stage04.py::need_weights']
+evidence_ref = ['notes/stage07-governance.md', 'results/stage04/need_weights.csv']
+limitation = 'Income weighting exists; private verification, access controls, correction/deletion workflow and live data collection do not.'
+
+[[clauses]]
+id = 'G09'
+status = 'not_made'
+implementation_ref = ['src/comergy/stage04.py::monthly_trueup', 'src/comergy/stage06.py::run']
+evidence_ref = ['notes/stage04-settlement.md', 'results/stage06/exit_summary.csv']
+limitation = 'Whole-year comparison and annual transfer formula exist; no notice deadline, prorated midyear bill, buyout or exit compensation promised.'
+
+[[clauses]]
+id = 'G10'
+status = 'implemented'
+implementation_ref = ['src/comergy/stage06.py::run']
+test_ref = ['tests/test_stage07.py::test_exit_and_outage_accounting_implications']
+evidence_ref = ['results/stage06/exit_summary.csv']
+limitation = 'Counterfactual full-year exit effects only, not a departure fee or portable gain guarantee.'
+
+[[clauses]]
+id = 'G11'
+status = 'implemented'
+implementation_ref = ['src/comergy/stage06_models.py::simulate_rule', 'src/comergy/operation.py::_rule_step', 'src/comergy/stage06.py::run']
+test_ref = ['tests/test_stage06.py::test_outage_window_switches_to_local_rule_only_inside_the_window', 'tests/test_stage07.py::test_exit_and_outage_accounting_implications']
+evidence_ref = ['results/stage06/communication_loss.csv', 'results/stage06/settlement_allocations.csv']
+limitation = 'Scheduled simulated coordination loss with grid available; no live detection, missing-meter reconstruction, compensation or recovery deadline.'
+
+[[clauses]]
+id = 'G12'
+status = 'not_made'
+evidence_ref = ['notes/stage07-regulatory-sources.md', 'notes/stage07-governance.md']
+limitation = 'Dispute workflow is proposed, no handler/deadline/enforcement or waiver of statutory rights.'
+
+[[clauses]]
+id = 'G13'
+status = 'not_made'
+evidence_ref = ['notes/stage07-regulatory-sources.md']
+limitation = 'Conditional retailer/metering route only, not regulatory approval or measured deployment feasibility.'
+
+[[clauses]]
+id = 'G14'
+status = 'not_made'
+evidence_ref = ['results/stage06/sensitivity_summary.csv', 'notes/organiser-questions.md', 'results/stage07/cited_numbers.csv']
+limitation = 'No commercial guarantee under unresolved tariff/wear units; sensitivity is simulation evidence.'

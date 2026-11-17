@@ -1,0 +1,44 @@
+# "Sharing plus" experiment, predeclared 25 September 2026 before any run.
+# Labelled experiment on top of the frozen simple sharing rule; it never
+# revises the Stage 02-06 results. All other assumptions are config/base.toml.
+
+[sharing_plus]
+stage06_results = "results/stage06" # Base coalition game (R0) and preserved headline references; read only.
+peak_tariff_raw = 0.55 # base.toml billing.peak_tariff_raw: a day containing this raw price is a peak day.
+hold_from_previous_day_hour = 21 # Reserve starts when the previous evening's off-peak (0.15) window opens.
+offpeak_price_raw = 0.15 # Grid top-up only in hours at the published off-peak price.
+spread_topup_evenly = true # Charge (target - SOC) / remaining off-peak hours, to limit the overnight peak.
+fixed_topup_fractions = [0.5, 1.0] # SP2 and SP3: declared a priori; both are reported, neither is selected.
+adoption_requires = "saving vs sharing in the full year and in both halves, validator pass" # Declared decision rule.
+
+[[sharing_plus.variants]]
+id = "SP0"
+label = "Control: frozen sharing rule replayed through the Stage 06 rule path"
+reserve = false
+topup = "none"
+
+[[sharing_plus.variants]]
+id = "SP1"
+label = "Peak reserve: on peak days batteries do not discharge from 21:00 the previous day until the peak window opens"
+reserve = true
+topup = "none"
+
+[[sharing_plus.variants]]
+id = "SP2"
+label = "Peak reserve plus off-peak grid top-up to 50% of usable capacity"
+reserve = true
+topup = "fixed"
+fraction = 0.5
+
+[[sharing_plus.variants]]
+id = "SP3"
+label = "Peak reserve plus off-peak grid top-up to 100% of usable capacity"
+reserve = true
+topup = "fixed"
+fraction = 1.0
+
+[[sharing_plus.variants]]
+id = "SP4"
+label = "Peak reserve plus adaptive top-up: last peak day's community peak-window import, shared by capacity"
+reserve = true
+topup = "adaptive"

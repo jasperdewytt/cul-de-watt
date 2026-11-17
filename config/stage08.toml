@@ -1,0 +1,56 @@
+# Stage 08 clean-environment reproduction contract. Declared 25 September 2026
+# before any regenerated export was compared with the committed results.
+# `comergy --stage08-compare RUN_ROOT` compares RUN_ROOT/results/** with the
+# committed (git-tracked) results/** under these rules.
+
+[stage08.tolerances]
+exact_aud = 0.0 # Rule-based accounts: deterministic arithmetic, so values must be identical.
+cost_aud = 1.0e-6 # Other rule-derived costs re-accounted by later stages; matches Stage 06 money_tolerance_aud.
+lp_aud = 1.0e-3 # Values that depend on LP solves; matches Stage 04 oracle_reconciliation_tolerance_aud.
+# The same absolute tolerance applies to every numeric column of a file in that
+# class (AUD, kWh, kW, fractions and counts); text cells must match exactly.
+
+[stage08.classes]
+# First matching glob wins; unmatched files are "lp". Globs are relative to the results root.
+exact = [
+  "results/independent/*", # Stage 01 independent rule (no solver).
+  "results/stage02/independent_rule/*", # Stage 02 independent rule accounts.
+  "results/stage02/sharing_rule/*", # Stage 02 simple sharing accounts.
+  "results/stage07/promise_map.csv", # Generated text map; must be identical.
+]
+cost = [
+  "results/stage05/independent_rule/*", # Rules replayed through Stage 05 accounting.
+  "results/stage05/sharing_rule/*", # Rules replayed through Stage 05 accounting.
+  "results/sharing_plus/household_changes.csv", # Rule-variant physical accounts (no solver).
+]
+
+[stage08.ignore]
+# Provenance, runtime and machine-specific content: not results.
+files = [
+  "*/run_manifest.json", # Hashes, git revision, paths and wall times.
+  "*/solver_metadata.json", # Solver timings and versions.
+  "results/stage04/coalition_cache.json", # Cache fingerprint with absolute paths.
+  "results/stage05/strong_settlement_provenance.json", # Hashes and paths of consumed inputs.
+  "results/stage05/controller_runtime.csv", # Runtime only.
+  "results/stage07/verification.json", # Input hashes and paths.
+  "results/stage07/preservation_check.json", # Stage 07 working-copy snapshot, not regenerated.
+  "*.toml", # Configuration copies (Stage 06 copy differs only in path keys).
+]
+columns = [
+  "*runtime*", # Solver or wall time.
+  "*seconds*", # Solver or wall time.
+  "case_input_paths", # Machine-specific paths.
+]
+# Files that --all does not regenerate: Stage 07 citation inputs and read-back
+# are committed inputs; Stage 06 independent verification is a separate command.
+not_regenerated = [
+  "results/stage07/cited_numbers.csv",
+  "results/stage07/household_readback.md",
+  "results/stage06/independent_verification.json",
+]
+
+[stage08.report]
+# Report macros read from results are compared with the committed
+# report/generated/numbers_sources.csv under the class of their source file.
+# Macros with root = "repo" read committed files in both runs and are skipped.
+headline_fragment = "tab_headline.tex" # The executive-summary headline table must be text-identical or within lp_aud.
